@@ -48,7 +48,6 @@ int main(void)
         return 1;
     }
 
-    // TODO: Investigate why the mouse is not fully captured
     if (!SDL_SetWindowRelativeMouseMode(window, true))
     {
         fprintf(stderr, "%s\n", SDL_GetError());
@@ -169,22 +168,23 @@ int main(void)
             }
             if (event.type == SDL_EVENT_MOUSE_MOTION)
             {
-                float mouse_x = event.motion.x;
-                float mouse_y = event.motion.y;
-
+                // TODO: Weird flickness while moving the camera and walking at the same time
                 if (first_mouse)
                 {
-                    last_x = mouse_x;
-                    last_y = mouse_y;
+                    last_x = event.motion.x;
+                    last_y = event.motion.y;
                     first_mouse = 0;
                 }
+
+                float mouse_x = last_x + event.motion.xrel;
+                float mouse_y = last_y + event.motion.yrel;
 
                 float xoffset = mouse_x - last_x;
                 float yoffset = last_y - mouse_y;
                 last_x = mouse_x;
                 last_y = mouse_y;
 
-                float sensitivity = 0.1f;
+                float sensitivity = 0.2f;
                 xoffset *= sensitivity;
                 yoffset *= sensitivity;
 
