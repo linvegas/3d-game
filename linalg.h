@@ -11,6 +11,43 @@ float radians(float degrees)
 typedef struct Vec3 { float x; float y; float z; } Vec3;
 #define vec3(x, y, z) (Vec3){(x), (y), (z)}
 
+Vec3 vec3_add(Vec3 v1, Vec3 v2)
+{
+    return vec3(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
+}
+
+Vec3 vec3_sub(Vec3 v1, Vec3 v2)
+{
+    return vec3(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
+}
+
+Vec3 vec3_scale(Vec3 v1, float value)
+{
+    return vec3(v1.x * value, v1.y * value, v1.z * value);
+}
+
+Vec3 vec3_cross(Vec3 v1, Vec3 v2)
+{
+    return vec3(v1.y*v2.z - v1.z*v2.y, v1.z*v2.x - v1.x*v2.z, v1.x*v2.y - v1.y*v2.x);
+}
+
+Vec3 vec3_normalize(Vec3 v)
+{
+    Vec3 result = v;
+
+    float length = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+    if (length != 0.0f)
+    {
+        float ilength = 1.0f/length;
+
+        result.x *= ilength;
+        result.y *= ilength;
+        result.z *= ilength;
+    }
+
+    return result;
+}
+
 void vec3_print(Vec3 v)
 {
     printf("(%8.2f, %8.2f, %8.2f)\n", v.x, v.y, v.z);
@@ -146,6 +183,48 @@ Mat4 mat4_rotate(float angle, Vec3 axis)
     return result;
 }
 
+Mat4 mat4_look_at(Vec3 pos, Vec3 target, Vec3 up)
+{
+    Mat4 result = {0};
+
+    float length = 0.0f;
+    float ilength = 0.0f;
+
+    // vec3_sub(pos, target)
+    Vec3 vz = { pos.x - target.x, pos.y - target.y, pos.z - target.z };
+
+    // vec3_normalize(vz)
+    Vec3 v = vz;
+    length = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+    if (length == 0.0f) length = 1.0f;
+    ilength = 1.0f/length;
+    vz.x *= ilength;
+    vz.y *= ilength;
+    vz.z *= ilength;
+
+    // vec3_cross(up, vz)
+    Vec3 vx = { up.y*vz.z - up.z*vz.y, up.z*vz.x - up.x*vz.z, up.x*vz.y - up.y*vz.x };
+
+    // vec3_normalize(x)
+    v = vx;
+    length = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+    if (length == 0.0f) length = 1.0f;
+    ilength = 1.0f/length;
+    vx.x *= ilength;
+    vx.y *= ilength;
+    vx.z *= ilength;
+
+    // vec3_cross(vz, vx)
+    Vec3 vy = { vz.y*vx.z - vz.z*vx.y, vz.z*vx.x - vz.x*vx.z, vz.x*vx.y - vz.y*vx.x };
+
+    result.m0 = vx.x; result.m4 = vx.y; result.m8 = vx.z;  result.m12 = -(vx.x*pos.x + vx.y*pos.y + vx.z*pos.z); // vec3_dot(vx, pos)
+    result.m1 = vy.x; result.m5 = vy.y; result.m9 = vy.z;  result.m13 = -(vy.x*pos.x + vy.y*pos.y + vy.z*pos.z); // vec3_dot(vy, pos)
+    result.m2 = vz.x; result.m6 = vz.y; result.m10 = vz.z; result.m14 = -(vz.x*pos.x + vz.y*pos.y + vz.z*pos.z); // vec3_dot(vz, pos)
+    result.m3 = 0.0f; result.m7 = 0.0f; result.m11 = 0.0f; result.m15 = 1.0f;
+
+    return result;
+}
+
 void mat4_print(Mat4 mat)
 {
     printf("\n"
@@ -195,7 +274,7 @@ Mat4 mat4_perspective(double fov, double aspect, double near_plane, double far_p
     double right = top*aspect;
     double left = -right;
 
-    // Mat4Frustum(-right, right, -top, top, near, far);
+    // mat4_frustum(-right, right, -top, top, near, far);
     float rl = (float)(right - left);
     float tb = (float)(top - bottom);
     float fn = (float)(far_plane - near_plane);
@@ -210,34 +289,6 @@ Mat4 mat4_perspective(double fov, double aspect, double near_plane, double far_p
 
     return result;
 }
-
-// Mat4 mat4_perpective(float fov, float aspect, float near, float far)
-// {
-//     Mat4 mat;
-//     float tanHalfFov = tanf(fov / 2.0f);
-//
-//     mat.m[0][0] = 1.0f / (aspect * tanHalfFov);
-//     mat.m[0][1] = 0.0f;
-//     mat.m[0][2] = 0.0f;
-//     mat.m[0][3] = 0.0f;
-//
-//     mat.m[1][0] = 0.0f;
-//     mat.m[1][1] = 1.0f / tanHalfFov;
-//     mat.m[1][2] = 0.0f;
-//     mat.m[1][3] = 0.0f;
-//
-//     mat.m[2][0] = 0.0f;
-//     mat.m[2][1] = 0.0f;
-//     mat.m[2][2] = -(far + near) / (far - near);
-//     mat.m[2][3] = -1.0f;
-//
-//     mat.m[3][0] = 0.0f;
-//     mat.m[3][1] = 0.0f;
-//     mat.m[3][2] = -(2.0f * far * near) / (far - near);
-//     mat.m[3][3] = 0.0f;
-//
-//     return mat;
-// }
 
 #endif  // LINALG_H
 
