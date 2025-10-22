@@ -1,6 +1,10 @@
+#include "renderer.h"
+
 #include <stdio.h>
 #include <stddef.h>
-#include "renderer.h"
+
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_timer.h>
 
 bool renderer_init(Renderer *r, const char *title, int width, int height)
 {

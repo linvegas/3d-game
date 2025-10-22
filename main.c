@@ -2,12 +2,11 @@
 #include <stddef.h>
 #include <math.h>
 
-#include "renderer.h"
-#include "shader.h"
-#include "linalg.h"
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_timer.h>
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_opengl.h>
+#include "renderer.h"
+#include "linalg.h"
 
 #define GLAD_GL_IMPLEMENTATION
 #include "external/glad.h"

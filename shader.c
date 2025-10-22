@@ -2,9 +2,6 @@
 
 #include <stdio.h>
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_opengl.h>
-
 const char *vertex_shader_src =
     "#version 330\n"
     "layout (location = 0) in vec3 vertexPos;\n"

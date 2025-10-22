@@ -1,7 +1,8 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include <SDL3/SDL.h>
+#include <SDL3/SDL_video.h>
+#include "external/glad.h"
 
 #include "linalg.h"
 #include "shader.h"
