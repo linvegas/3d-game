@@ -100,7 +100,7 @@ int main(void)
 
     float last_time = SDL_GetTicks();
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     while (running)
     {
@@ -114,23 +114,35 @@ int main(void)
 
         renderer_camera_update(&renderer);
 
+        float rot = SDL_GetTicks()/1000.0f;
+
+        {
+            Vec3 light_pos = {-3.0f, 5.0f, 4.0f};
+            Vec3 cube_rot = {0.0f, 0.0f, 0.0f};
+            Vec3 cube_scale = {0.35f, 0.35f, 0.35f};
+            shader_set_vec3(renderer.shader_3d, "lightPos", light_pos);
+            shader_set_vec3(renderer.shader_3d, "objectColor", vec3(1.0, 1.0, 1.0));
+            render_model_3d(&renderer, cube, light_pos, cube_rot, cube_scale);
+        }
+
         {
             Vec3 cube_pos = {0.0f, 0.0f, 0.0f};
-            Vec3 cube_rot = {1.0f, 0.0f, 0.0f};
+            Vec3 cube_rot = {50.0 * rot, 0.0f, 0.0f};
             Vec3 cube_scale = {1.0f, 1.0f, 1.0f};
+            shader_set_vec3(renderer.shader_3d, "objectColor", vec3(1.0, 0.5, 0.31));
             render_model_3d(&renderer, cube, cube_pos, cube_rot, cube_scale);
         }
 
         {
             Vec3 cube_pos = {3.0f, 0.0f, 0.0f};
-            Vec3 cube_rot = {1.0f, 0.0f, 0.6f};
+            Vec3 cube_rot = {0.0f, 50*rot, 0.0f};
             Vec3 cube_scale = {1.0f, 1.0f, 1.0f};
             render_model_3d(&renderer, cube, cube_pos, cube_rot, cube_scale);
         }
 
         {
             Vec3 cube_pos = {-3.0f, 0.0f, 0.0f};
-            Vec3 cube_rot = {1.0f, 0.6f, 0.0f};
+            Vec3 cube_rot = {0.0f, 0.0f, 50*rot};
             Vec3 cube_scale = {1.0f, 1.0f, 1.0f};
             render_model_3d(&renderer, cube, cube_pos, cube_rot, cube_scale);
         }

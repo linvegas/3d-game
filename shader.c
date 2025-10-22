@@ -5,7 +5,10 @@
 const char *vertex_shader_src =
     "#version 330\n"
     "layout (location = 0) in vec3 vertexPos;\n"
-    "layout (location = 1) in vec4 vertexColor;\n"
+    "layout (location = 1) in vec3 vertexNormal;\n"
+    "layout (location = 2) in vec4 vertexColor;\n"
+    "out vec3 fragPos;\n"
+    "out vec3 fragNormal;\n"
     "out vec4 fragColor;\n"
     "uniform mat4 transform;\n"
     "uniform mat4 model;\n"
@@ -16,16 +19,30 @@ const char *vertex_shader_src =
     "{\n"
     "   gl_Position = projection * view * model * vec4(vertexPos, 1.0);\n"
     "   // gl_Position = vec4(vertexPos, 1.0);\n"
+    "   fragPos = vec3(model * vec4(vertexPos, 1.0));\n"
+    "   fragNormal = mat3(transpose(inverse(model))) * vertexNormal;\n"
     "   fragColor = vertexColor;\n"
     "}\n";
 
 const char *frag_shader_src =
     "#version 330 core\n"
+    "in vec3 fragPos;\n"
+    "in vec3 fragNormal;\n"
     "in vec4 fragColor;\n"
     "out vec4 FragColor;\n"
+    "uniform vec3 lightPos;\n"
+    "uniform vec3 objectColor;\n"
     "\n"
     "void main() {\n"
-    "    FragColor = fragColor;\n"
+    "    vec3 lightColor = vec3(1.0);\n"
+    "    float ambientStrength = 0.1;\n"
+    "    vec3 ambient = ambientStrength * lightColor;;\n"
+    "    vec3 norm = normalize(fragNormal);\n"
+    "    vec3 lightDir = normalize(lightPos - fragPos);\n"
+    "    float diff = max(dot(norm, lightDir), 0.0);\n"
+    "    vec3 diffuse = diff * lightColor;\n"
+    "    vec3 result = (ambient + diffuse) * objectColor;\n"
+    "    FragColor = vec4(result, 1.0);\n"
     "}\n";
 
 bool shader_compile(const char *source, GLuint *shader, GLenum shader_type)
@@ -103,4 +120,9 @@ void shader_use(Shader s)
 void shader_set_mat4(Shader s, const char *uni, Mat4 value)
 {
     glUniformMatrix4fv(glGetUniformLocation(s, uni), 1, GL_FALSE, mat4_to_float(value).v);
+}
+
+void shader_set_vec3(Shader s, const char *uni, Vec3 value)
+{
+    glUniform3f(glGetUniformLocation(s, uni), value.x, value.y, value.z);
 }

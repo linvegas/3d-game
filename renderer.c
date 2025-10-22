@@ -98,40 +98,40 @@ Mesh mesh_create_cube(float size)
 
     Vertex vertices[] = {
         // Front face (Z+)
-        {{-half, -half,  half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f, 1.0f} , {0.0f, 0.0f}*/},
-        {{ half, -half,  half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f, 1.0f} , {1.0f, 0.0f}*/},
-        {{ half,  half,  half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f, 1.0f} , {1.0f, 1.0f}*/},
-        {{-half,  half,  half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f, 1.0f} , {0.0f, 1.0f}*/},
+        {{-half, -half,  half}, {0.0f, 0.0f, 1.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
+        {{ half, -half,  half}, {0.0f, 0.0f, 1.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
+        {{ half,  half,  half}, {0.0f, 0.0f, 1.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
+        {{-half,  half,  half}, {0.0f, 0.0f, 1.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/},
 
         // Back face (Z-)
-        {{ half, -half, -half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}*/},
-        {{-half, -half, -half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}*/},
-        {{-half,  half, -half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}*/},
-        {{ half,  half, -half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}*/},
+        {{ half, -half, -half}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
+        {{-half, -half, -half}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
+        {{-half,  half, -half}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
+        {{ half,  half, -half}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/},
 
         // Right face (X+)
-        {{ half, -half,  half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f, 0.0f} , {0.0f, 0.0f}*/},
-        {{ half, -half, -half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f, 0.0f} , {1.0f, 0.0f}*/},
-        {{ half,  half, -half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f, 0.0f} , {1.0f, 1.0f}*/},
-        {{ half,  half,  half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f, 0.0f} , {0.0f, 1.0f}*/},
+        {{ half, -half,  half}, {1.0f, 0.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
+        {{ half, -half, -half}, {1.0f, 0.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
+        {{ half,  half, -half}, {1.0f, 0.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
+        {{ half,  half,  half}, {1.0f, 0.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/},
 
         // Left face (X-)
-        {{-half, -half, -half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}*/},
-        {{-half, -half,  half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}*/},
-        {{-half,  half,  half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}*/},
-        {{-half,  half, -half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}*/},
+        {{-half, -half, -half}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
+        {{-half, -half,  half}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
+        {{-half,  half,  half}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
+        {{-half,  half, -half}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/},
 
         // Top face (Y+)
-        {{-half,  half,  half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f, 0.0f} , {0.0f, 0.0f}*/},
-        {{ half,  half,  half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f, 0.0f} , {1.0f, 0.0f}*/},
-        {{ half,  half, -half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f}*/},
-        {{-half,  half, -half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f, 0.0f} , {0.0f, 1.0f}*/},
+        {{-half,  half,  half}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
+        {{ half,  half,  half}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
+        {{ half,  half, -half}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
+        {{-half,  half, -half}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/},
 
         // Bottom face (Y-)
-        {{-half, -half, -half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}*/},
-        {{ half, -half, -half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f}*/},
-        {{ half, -half,  half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f}*/},
-        {{-half, -half,  half}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, -1.0f, 0.0f}, {0.0f, 1.0f}*/}
+        {{-half, -half, -half}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
+        {{ half, -half, -half}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
+        {{ half, -half,  half}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
+        {{-half, -half,  half}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/}
     };
 
     unsigned int indices[] = {
@@ -171,7 +171,10 @@ void mesh_init_data(Mesh *m, Vertex *vertices, size_t vertices_len, unsigned int
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, position));
 
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, color));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, normal));
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, color));
 
     glBindVertexArray(0);
 
@@ -186,20 +189,20 @@ void render_model_3d(Renderer *r, Mesh m, Vec3 pos, Vec3 rot, Vec3 scale)
 {
     Mat4 translation = mat4_translate(pos);
 
-    // Vec3 x_axis = {1.0f, 0.0f, 0.0f};
-    // Vec3 y_axis = {0.0f, 1.0f, 0.0f};
-    // Vec3 z_axis = {0.0f, 0.0f, 1.0f};
-    //
-    // Mat4 rotation_x = mat4_rotate(SDL_GetTicks()/1000.0f * radians(rot.x), x_axis);
-    // Mat4 rotation_y = mat4_rotate(SDL_GetTicks()/1000.0f * radians(rot.y), y_axis);
-    // Mat4 rotation_z = mat4_rotate(SDL_GetTicks()/1000.0f * radians(rot.z), z_axis);
-    //
-    // Mat4 rotation = mat4_multiply(rotation_z, rotation_y);
-    // rotation = mat4_multiply(rotation, rotation_x);
+    Vec3 x_axis = {1.0f, 0.0f, 0.0f};
+    Vec3 y_axis = {0.0f, 1.0f, 0.0f};
+    Vec3 z_axis = {0.0f, 0.0f, 1.0f};
 
-    Mat4 rotation = mat4_rotate(
-        SDL_GetTicks()/1000.0f * radians(50.0), rot
-    );
+    Mat4 rotation_x = mat4_rotate(radians(rot.x), x_axis);
+    Mat4 rotation_y = mat4_rotate(radians(rot.y), y_axis);
+    Mat4 rotation_z = mat4_rotate(radians(rot.z), z_axis);
+
+    Mat4 rotation = mat4_multiply(rotation_x, rotation_y);
+    rotation = mat4_multiply(rotation, rotation_z);
+
+    // Mat4 rotation = mat4_rotate(
+    //     SDL_GetTicks()/1000.0f * radians(50.0), rot
+    // );
 
     Mat4 scaled = mat4_scale(scale);
 

@@ -19,6 +19,7 @@ typedef struct {
     Mat4  projection;
 } Camera;
 
+// TODO: Introduce a Light struct
 typedef struct {
     SDL_Window *window;
     Camera camera;
@@ -35,7 +36,7 @@ void renderer_camera_update(Renderer *r);
 
 typedef struct Vertex {
     Vec3 position;
-    // Vec3 normal;
+    Vec3 normal;
     Vec4 color;
 } Vertex;
 
