@@ -28,64 +28,71 @@ const char *frag_shader_src =
     "    FragColor = fragColor;\n"
     "}\n";
 
-void shader_link(GLuint program)
+bool shader_compile(const char *source, GLuint *shader, GLenum shader_type)
 {
-    glLinkProgram(program);
+    *shader = glCreateShader(shader_type);
+
+    glShaderSource(*shader, 1, &source, NULL);
+    glCompileShader(*shader);
 
     int success;
 
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    glGetShaderiv(*shader, GL_COMPILE_STATUS, &success);
 
     if (!success) {
         char info_log[SHADER_INFO_LOG_CAP];
         int info_log_len = 0;
-        glGetProgramInfoLog(program, SHADER_INFO_LOG_CAP, &info_log_len, info_log);
-        fprintf(stderr, "[ERROR] Failed to link shaders\n");
-        fprintf(stderr, "%.*s", info_log_len, info_log);
-    }
-}
-
-GLuint shader_compile(const char *source, GLenum shader_type)
-{
-    GLuint shader = glCreateShader(shader_type);
-
-    glShaderSource(shader, 1, &source, NULL);
-    glCompileShader(shader);
-
-    int success;
-
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-
-    if (!success) {
-        char info_log[SHADER_INFO_LOG_CAP];
-        int info_log_len = 0;
-        glGetShaderInfoLog(shader, SHADER_INFO_LOG_CAP, &info_log_len, info_log);
+        glGetShaderInfoLog(*shader, SHADER_INFO_LOG_CAP, &info_log_len, info_log);
         fprintf(stderr, "[ERROR] Failed to compile %s shader\n", shader_type == GL_VERTEX_SHADER ? "Vertex" : "Fragment");
         fprintf(stderr, "%.*s\n", info_log_len, info_log);
+        return false;
     }
 
-    return shader;
+    return true;
 }
 
-Shader shader_create_program(const char *vertex_path, const char *fragment_path)
+bool shader_link(GLuint *program)
+{
+    glLinkProgram(*program);
+
+    int success;
+
+    glGetProgramiv(*program, GL_LINK_STATUS, &success);
+
+    if (!success) {
+        char info_log[SHADER_INFO_LOG_CAP];
+        int info_log_len = 0;
+        glGetProgramInfoLog(*program, SHADER_INFO_LOG_CAP, &info_log_len, info_log);
+        fprintf(stderr, "[ERROR] Failed to link shaders\n");
+        fprintf(stderr, "%.*s", info_log_len, info_log);
+        return false;
+    }
+
+    return true;
+}
+
+bool shader_create_program(Shader *s, const char *vertex_path, const char *fragment_path)
 {
     (void)vertex_path;
     (void)fragment_path;
 
-    Shader shader = glCreateProgram();
+    *s = glCreateProgram();
 
-    GLuint vertex_shader = shader_compile(vertex_shader_src, GL_VERTEX_SHADER);
-    GLuint fragment_shader = shader_compile(frag_shader_src, GL_FRAGMENT_SHADER);
+    GLuint vertex_shader;
+    GLuint fragment_shader;
 
-    glAttachShader(shader, vertex_shader);
-    glAttachShader(shader, fragment_shader);
+    if (!shader_compile(vertex_shader_src, &vertex_shader, GL_VERTEX_SHADER)) return false;
+    if (!shader_compile(frag_shader_src, &fragment_shader, GL_FRAGMENT_SHADER)) return false;
 
-    shader_link(shader);
+    glAttachShader(*s, vertex_shader);
+    glAttachShader(*s, fragment_shader);
+
+    if (!shader_link(s)) return false;
 
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
 
-    return shader;
+    return true;
 }
 
 void shader_use(Shader s)

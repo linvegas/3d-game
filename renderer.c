@@ -46,7 +46,9 @@ bool renderer_init(Renderer *r, const char *title, int width, int height)
         return false;
     }
 
-    r->shader_3d = shader_create_program("shader.vert", "shader.frag");
+    Shader shader_3d;
+    if (!shader_create_program(&shader_3d, "shader.vert", "shader.frag")) return false;
+    r->shader_3d = shader_3d;
 
     Camera camera = {0};
     camera.fov = radians(65.0);
@@ -144,7 +146,6 @@ Mesh mesh_create_cube(float size)
     mesh_init_data(&mesh, vertices, 24, indices, 36);
 
     return mesh;
-    // TODO: Check for errors
 }
 
 void mesh_init_data(Mesh *m, Vertex *vertices, size_t vertices_len, unsigned int *indices, size_t indices_len)
@@ -174,7 +175,11 @@ void mesh_init_data(Mesh *m, Vertex *vertices, size_t vertices_len, unsigned int
 
     glBindVertexArray(0);
 
-    // TODO: Check for errors
+    GLenum error = glGetError();
+    if (error != GL_NO_ERROR)
+    {
+        fprintf(stderr, "[ERROR]: Failed to initialize mesh data: %d\n", error);
+    }
 }
 
 void render_model_3d(Renderer *r, Mesh m, Vec3 pos, Vec3 rot, Vec3 scale)
