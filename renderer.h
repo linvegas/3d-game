@@ -26,6 +26,7 @@ typedef struct {
     int width;
     int height;
     Shader shader_3d;
+    bool wireframes;
 } Renderer;
 
 bool renderer_init(Renderer *r, const char *title, int width, int height);
@@ -49,6 +50,7 @@ typedef struct {
 } Mesh;
 
 void mesh_init_data(Mesh *m, Vertex *vertices, size_t vertices_len, unsigned int *indices, size_t indices_len);
+Mesh mesh_create_plane(int width, int height, int subdivisions);
 Mesh mesh_create_cube(float size);
 void render_model_3d(Renderer *r, Mesh m, Vec3 pos, Vec3 rot, Vec3 scale);
 

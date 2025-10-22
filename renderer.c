@@ -64,6 +64,7 @@ bool renderer_init(Renderer *r, const char *title, int width, int height)
 
     r->width = width;
     r->height = height;
+    r->wireframes = false;
 
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
@@ -81,6 +82,9 @@ void renderer_clear(Renderer *ren, float r, float g, float b, float a)
 
     SDL_GetWindowSize(ren->window, &ren->width, &ren->height);
     glViewport(0, 0, ren->width, ren->height);
+
+    if (ren->wireframes) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void renderer_present(Renderer *r)
@@ -88,6 +92,79 @@ void renderer_present(Renderer *r)
     if (!r || !r->window) return;
 
     SDL_GL_SwapWindow(r->window);
+}
+
+Mesh mesh_create_plane(int width, int height, int subdivisions)
+{
+    Mesh mesh = {0};
+
+    if (subdivisions < 1) subdivisions = 1;
+
+    int vertices_len = (subdivisions + 1) * (subdivisions + 1);
+    int indices_len = subdivisions * subdivisions * 6;
+
+    float half_width = width/2.0;
+    float half_height = height/2.0;
+    float step_x = width / (float)subdivisions;
+    float step_z = height / (float)subdivisions;
+
+    Vertex vertices[vertices_len];
+
+    size_t index = 0;
+
+    for (int z = 0; z <= subdivisions; z++)
+    {
+        for (int x = 0; x <= subdivisions; x++)
+        {
+            float px = -half_width + (x * step_x);
+            float pz = -half_height + (z * step_z);
+
+            vertices[index].position = (Vec3){px, 0.0f, pz};
+            vertices[index].normal = (Vec3){0.0f, 1.0f, 0.0f};
+            vertices[index].color = (Vec4){1.0f, 1.0f, 1.0f, 1.0f};
+            index += 1;
+        }
+    }
+
+    unsigned int indices[indices_len];
+
+    index = 0;
+
+    for (int z = 0; z < subdivisions; z++)
+    {
+        for (int x = 0; x < subdivisions; x++)
+        {
+            int top_left = z * (subdivisions + 1) + x;
+            int top_right = top_left + 1;
+            int bottom_left = (z + 1) * (subdivisions + 1) + x;
+            int bottom_right = bottom_left + 1;
+
+            indices[index++] = top_left;
+            indices[index++] = bottom_left;
+            indices[index++] = top_right;
+
+            indices[index++] = top_right;
+            indices[index++] = bottom_right;
+            indices[index++] = bottom_left;
+        }
+    }
+
+    // Vertex vertices[] = {
+    //     // Front face (Z+)
+    //     {{-half_width, 0.0f, -half_height}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
+    //     {{ half_width, 0.0f, -half_height}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
+    //     {{ half_width, 0.0f,  half_height}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
+    //     {{-half_width, 0.0f,  half_height}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/},
+    // };
+
+    // unsigned int indices[] = {
+    //     0, 1, 2,
+    //     2, 3, 0,
+    // };
+
+    mesh_init_data(&mesh, vertices, vertices_len, indices, indices_len);
+
+    return mesh;
 }
 
 Mesh mesh_create_cube(float size)
