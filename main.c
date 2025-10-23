@@ -23,7 +23,7 @@ float last_x = SCREEN_WIDTH / 2.0;
 float last_y = SCREEN_HEIGHT / 2.0;
 int first_mouse = 1;
 
-float vel = 5.0f;
+float vel = 6.0f;
 float delta = 0.0f;
 bool paused = false;
 
@@ -45,14 +45,14 @@ void handle_input(Renderer *r)
                 SDL_SetWindowRelativeMouseMode(r->window, !paused);
             }
 
-            if (event.key.key == SDLK_W)
-                r->camera.position = vec3_add(r->camera.position, vec3_scale(r->camera.target, delta*vel));
-            if (event.key.key == SDLK_S)
-                r->camera.position = vec3_sub(r->camera.position, vec3_scale(r->camera.target, delta*vel));
-            if (event.key.key == SDLK_A)
-                r->camera.position = vec3_sub(r->camera.position, vec3_scale(vec3_normalize(vec3_cross(r->camera.target, r->camera.up)), delta*vel));
-            if (event.key.key == SDLK_D)
-                r->camera.position = vec3_add(r->camera.position, vec3_scale(vec3_normalize(vec3_cross(r->camera.target, r->camera.up)), delta*vel));
+            // if (event.key.key == SDLK_W)
+            //     r->camera.position = vec3_add(r->camera.position, vec3_scale(forward, delta*vel));
+            // if (event.key.key == SDLK_S)
+            //     r->camera.position = vec3_sub(r->camera.position, vec3_scale(forward, delta*vel));
+            // if (event.key.key == SDLK_A)
+            //     r->camera.position = vec3_sub(r->camera.position, vec3_scale(right, delta*vel));
+            // if (event.key.key == SDLK_D)
+            //     r->camera.position = vec3_add(r->camera.position, vec3_scale(right, delta*vel));
         }
         if (event.type == SDL_EVENT_MOUSE_MOTION)
         {
@@ -89,13 +89,28 @@ void handle_input(Renderer *r)
             front.y = sinf(radians(pitch));
             front.z = sinf(radians(yaw)) * cosf(radians(pitch));
             r->camera.target = vec3_normalize(front);
-
-            // printf("x: %f  ", event.motion.x);
-            // printf("y: %f  ", event.motion.y);
-            // printf("xrel: %f  ", event.motion.xrel);
-            // printf("yrel: %f\n", event.motion.yrel);
         }
     }
+
+    // Camera moviment
+    const bool *state = SDL_GetKeyboardState(NULL);
+
+    Vec3 forward = r->camera.target;
+    forward.y = 0;
+    forward = vec3_normalize(forward);
+
+    Vec3 right = vec3_normalize(vec3_cross(forward, r->camera.up));
+
+    Vec3 move = {0};
+
+    if (state[SDL_SCANCODE_W]) move = vec3_add(move, forward);
+    if (state[SDL_SCANCODE_S]) move = vec3_sub(move, forward);
+    if (state[SDL_SCANCODE_A]) move = vec3_sub(move, right);
+    if (state[SDL_SCANCODE_D]) move = vec3_add(move, right);
+
+    if (vec3_length(move) > 0) move = vec3_normalize(move);
+
+    r->camera.position = vec3_add(r->camera.position, vec3_scale(move, delta*vel));
 }
 
 int main(void)

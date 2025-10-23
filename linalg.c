@@ -44,6 +44,11 @@ Vec3 vec3_normalize(Vec3 v)
     return result;
 }
 
+float vec3_length(Vec3 v)
+{
+    return sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+}
+
 void vec3_print(Vec3 v)
 {
     printf("(%8.2f, %8.2f, %8.2f)\n", v.x, v.y, v.z);

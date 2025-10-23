@@ -17,6 +17,7 @@ Vec3 vec3_sub(Vec3 v1, Vec3 v2);
 Vec3 vec3_scale(Vec3 v1, float value);
 Vec3 vec3_normalize(Vec3 v);
 Vec3 vec3_cross(Vec3 v1, Vec3 v2);
+float vec3_length(Vec3 v);
 
 typedef struct Mat4 {
     float m0, m4,  m8, m12;
