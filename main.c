@@ -111,6 +111,8 @@ int main(void)
     Mesh floor = mesh_create_plane(100, 100, 0);
     Mesh wall = mesh_create_plane(8, 8, 0);
 
+    Texture city = texture_load_from_file("assets/pc98-city.png");
+
     float last_time = SDL_GetTicks();
 
     while (running)
@@ -125,16 +127,19 @@ int main(void)
 
         renderer_camera_update(&renderer);
 
-
         float r = SDL_GetTicks()/1000.0f;
+
+        texture_bind(city, 0);
+        shader_set_int(renderer.shader_3d, "uTexture", 0);
+        shader_set_int(renderer.shader_3d, "uUseTexture", 1);
 
         // WALL
         {
             Vec3 pos = {0.0, 0.0, -2.0};
             Vec3 rot = {90.0, 0.0, 0.0};
             Vec3 scale = {1.0, 1.0, 1.0};
-            shader_set_vec3(renderer.shader_3d, "objectColor", vec3(0.7, 0.7, 0.7));
-            render_model_3d(&renderer, wall, pos, rot, scale);
+            Vec4 color = {1.0, 1.0, 1.0, 1.0};
+            render_mesh_3d(&renderer, wall, pos, rot, scale, color);
         }
 
         // WALL
@@ -142,8 +147,8 @@ int main(void)
             Vec3 pos = {-5.0, 0.0, 0.0};
             Vec3 rot = {90.0, 90.0, 0.0};
             Vec3 scale = {1.0, 1.0, 3.0};
-            shader_set_vec3(renderer.shader_3d, "objectColor", vec3(0.7, 0.7, 0.7));
-            render_model_3d(&renderer, wall, pos, rot, scale);
+            Vec4 color = {1.0, 1.0, 1.0, 1.0};
+            render_mesh_3d(&renderer, wall, pos, rot, scale, color);
         }
 
         // WALL
@@ -151,17 +156,19 @@ int main(void)
             Vec3 pos = {5.0, 0.0, 0.0};
             Vec3 rot = {90.0, 90.0, 0.0};
             Vec3 scale = {1.0, 1.0, 3.0};
-            shader_set_vec3(renderer.shader_3d, "objectColor", vec3(0.7, 0.7, 0.7));
-            render_model_3d(&renderer, wall, pos, rot, scale);
+            Vec4 color = {1.0, 1.0, 1.0, 1.0};
+            render_mesh_3d(&renderer, wall, pos, rot, scale, color);
         }
+
+        shader_set_int(renderer.shader_3d, "uUseTexture", 0);
 
         // FLOOR
         {
             Vec3 pos = {0.0, -2.0, 0.0};
             Vec3 rot = {0.0, 0.0, 0.0};
             Vec3 scale = {1.0, 1.0, 1.0};
-            shader_set_vec3(renderer.shader_3d, "objectColor", vec3(0.5, 0.5, 0.5));
-            render_model_3d(&renderer, floor, pos, rot, scale);
+            Vec4 color = {0.5, 0.5, 0.5, 1.0};
+            render_mesh_3d(&renderer, floor, pos, rot, scale, color);
         }
 
         // LIGHT
@@ -169,9 +176,9 @@ int main(void)
             Vec3 light_pos = {-3.0f, 5.0f, 4.0};
             Vec3 rot = {0.0f, 0.0f, 0.0f};
             Vec3 scale = {0.35f, 0.35f, 0.35f};
-            shader_set_vec3(renderer.shader_3d, "lightPos", light_pos);
-            shader_set_vec3(renderer.shader_3d, "objectColor", vec3(1.0, 1.0, 1.0));
-            render_model_3d(&renderer, cube, light_pos, rot, scale);
+            Vec4 color = {1.0, 1.0, 1.0, 1.0};
+            shader_set_vec3(renderer.shader_3d, "uLightPos", light_pos);
+            render_mesh_3d(&renderer, cube, light_pos, rot, scale, color);
         }
 
         // CUBE_MIDDLE
@@ -179,8 +186,8 @@ int main(void)
             Vec3 pos = {0.0f, 0.0f, 0.0f};
             Vec3 rot = {50.0 * r, 0.0f, 0.0f};
             Vec3 scale = {1.0f, 1.0f, 1.0f};
-            shader_set_vec3(renderer.shader_3d, "objectColor", vec3(1.0, 0.5, 0.31));
-            render_model_3d(&renderer, cube, pos, rot, scale);
+            Vec4 color = {1.0, 0.5, 0.31, 1.0};
+            render_mesh_3d(&renderer, cube, pos, rot, scale, color);
         }
 
         // CUBE_RIGHT
@@ -188,7 +195,8 @@ int main(void)
             Vec3 pos = {3.0f, 0.0f, 0.0f};
             Vec3 rot = {0.0f, 50*r, 0.0f};
             Vec3 scale = {1.0f, 1.0f, 1.0f};
-            render_model_3d(&renderer, cube, pos, rot, scale);
+            Vec4 color = {1.0, 0.5, 0.31, 1.0};
+            render_mesh_3d(&renderer, cube, pos, rot, scale, color);
         }
 
         // CUBE_LEFT
@@ -196,7 +204,8 @@ int main(void)
             Vec3 pos = {-3.0f, 0.0f, 0.0f};
             Vec3 rot = {0.0f, 0.0f, 50*r};
             Vec3 scale = {1.0f, 1.0f, 1.0f};
-            render_model_3d(&renderer, cube, pos, rot, scale);
+            Vec4 color = {1.0, 0.5, 0.31, 1.0};
+            render_mesh_3d(&renderer, cube, pos, rot, scale, color);
         }
 
         renderer_present(&renderer);

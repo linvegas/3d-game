@@ -4,45 +4,51 @@
 
 const char *vertex_shader_src =
     "#version 330\n"
-    "layout (location = 0) in vec3 vertexPos;\n"
-    "layout (location = 1) in vec3 vertexNormal;\n"
-    "layout (location = 2) in vec4 vertexColor;\n"
-    "out vec3 fragPos;\n"
-    "out vec3 fragNormal;\n"
-    "out vec4 fragColor;\n"
-    "uniform mat4 transform;\n"
-    "uniform mat4 model;\n"
-    "uniform mat4 view;\n"
-    "uniform mat4 projection;\n"
+    "layout (location = 0) in vec3 vPos;\n"
+    "layout (location = 1) in vec3 vNormal;\n"
+    "layout (location = 2) in vec2 vTexCoord;\n"
+    "layout (location = 3) in vec4 vColor;\n"
+    "out vec3 fPos;\n"
+    "out vec3 fNormal;\n"
+    "out vec2 fTexCoord;\n"
+    "out vec4 fColor;\n"
+    "uniform mat4 uModel;\n"
+    "uniform mat4 uView;\n"
+    "uniform mat4 uProjection;\n"
     "\n"
     "void main()\n"
     "{\n"
-    "   gl_Position = projection * view * model * vec4(vertexPos, 1.0);\n"
-    "   // gl_Position = vec4(vertexPos, 1.0);\n"
-    "   fragPos = vec3(model * vec4(vertexPos, 1.0));\n"
-    "   fragNormal = mat3(transpose(inverse(model))) * vertexNormal;\n"
-    "   fragColor = vertexColor;\n"
+    "   gl_Position = uProjection * uView * uModel * vec4(vPos, 1.0);\n"
+    "   // gl_Position = vec4(vPos, 1.0);\n"
+    "   fPos = vec3(uModel * vec4(vPos, 1.0));\n"
+    "   fNormal = mat3(transpose(inverse(uModel))) * vNormal;\n"
+    "   fTexCoord = vTexCoord;\n"
+    "   fColor = vColor;\n"
     "}\n";
 
 const char *frag_shader_src =
     "#version 330 core\n"
-    "in vec3 fragPos;\n"
-    "in vec3 fragNormal;\n"
-    "in vec4 fragColor;\n"
+    "in vec3 fPos;\n"
+    "in vec3 fNormal;\n"
+    "in vec2 fTexCoord;\n"
+    "in vec4 fColor;\n"
     "out vec4 FragColor;\n"
-    "uniform vec3 lightPos;\n"
-    "uniform vec3 objectColor;\n"
+    "uniform sampler2D uTexture;\n"
+    "uniform bool uUseTexture;\n"
+    "uniform vec3 uLightPos;\n"
+    "uniform vec4 uColor;\n"
     "\n"
     "void main() {\n"
     "    vec3 lightColor = vec3(1.0);\n"
     "    float ambientStrength = 0.1;\n"
     "    vec3 ambient = ambientStrength * lightColor;;\n"
-    "    vec3 norm = normalize(fragNormal);\n"
-    "    vec3 lightDir = normalize(lightPos - fragPos);\n"
+    "    vec3 norm = normalize(fNormal);\n"
+    "    vec3 lightDir = normalize(uLightPos - fPos);\n"
     "    float diff = max(dot(norm, lightDir), 0.0);\n"
     "    vec3 diffuse = diff * lightColor;\n"
-    "    vec3 result = (ambient + diffuse) * objectColor;\n"
-    "    FragColor = vec4(result, 1.0);\n"
+    "    vec4 texColor = uUseTexture ? texture(uTexture, fTexCoord) : vec4(1.0);\n"
+    "    vec3 light = ambient + diffuse;\n"
+    "    FragColor = vec4(light, 1.0) * texColor * uColor;\n"
     "}\n";
 
 bool shader_compile(const char *source, GLuint *shader, GLenum shader_type)
@@ -125,4 +131,14 @@ void shader_set_mat4(Shader s, const char *uni, Mat4 value)
 void shader_set_vec3(Shader s, const char *uni, Vec3 value)
 {
     glUniform3f(glGetUniformLocation(s, uni), value.x, value.y, value.z);
+}
+
+void shader_set_vec4(Shader s, const char *uni, Vec4 value)
+{
+    glUniform4f(glGetUniformLocation(s, uni), value.x, value.y, value.z, value.w);
+}
+
+void shader_set_int(Shader s, const char *uni, int value)
+{
+    glUniform1i(glGetUniformLocation(s, uni), value);
 }

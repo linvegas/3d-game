@@ -6,6 +6,10 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_timer.h>
 
+#define STBI_FAILURE_USERMSG
+#define STB_IMAGE_IMPLEMENTATION
+#include "external/stb_image.h"
+
 bool renderer_init(Renderer *r, const char *title, int width, int height)
 {
     if (!SDL_Init(SDL_INIT_VIDEO))
@@ -94,6 +98,69 @@ void renderer_present(Renderer *r)
     SDL_GL_SwapWindow(r->window);
 }
 
+void renderer_camera_update(Renderer *r)
+{
+    r->camera.aspect = r->width/r->height;
+
+    // View
+    Mat4 view = mat4_identity();
+    Mat4 look = mat4_look_at(
+        r->camera.position,
+        vec3_add(r->camera.position, r->camera.target),
+        r->camera.up
+    );
+    r->camera.view = mat4_multiply(view, look);
+
+    // 3D Projection
+    Mat4 projection = mat4_identity();
+    Mat4 perspective = mat4_perspective(
+        r->camera.fov, r->camera.aspect,
+        r->camera.near, r->camera.far
+    );
+    r->camera.projection = mat4_multiply(projection, perspective);
+}
+
+Texture texture_load_from_file(const char *filepath)
+{
+    Texture t = {0};
+
+    int n;
+
+    unsigned char *data = stbi_load(filepath, &t.width, &t.height, &n, 0);
+
+    if (data == 0)
+        fprintf(stderr, "[ERROR] Texture: %s '%s'\n", stbi_failure_reason(), filepath);
+
+    glGenTextures(1, &t.id);
+    glBindTexture(GL_TEXTURE_2D, t.id);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, t.width, t.height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    if (data != 0) printf("[INFO] Texture '%s' was loaded!\n", filepath);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    stbi_image_free(data);
+
+    return t;
+}
+
+void texture_bind(Texture t, int slot)
+{
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, t.id);
+}
+
+void texture_unbind(void)
+{
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 Mesh mesh_create_plane(int width, int height, int subdivisions)
 {
     Mesh mesh = {0};
@@ -107,6 +174,8 @@ Mesh mesh_create_plane(int width, int height, int subdivisions)
     float half_height = height/2.0;
     float step_x = width / (float)subdivisions;
     float step_z = height / (float)subdivisions;
+    float tex_step_x = 1.0f / (float)subdivisions;
+    float tex_step_z = 1.0f / (float)subdivisions;
 
     Vertex vertices[vertices_len];
 
@@ -118,9 +187,12 @@ Mesh mesh_create_plane(int width, int height, int subdivisions)
         {
             float px = -half_width + (x * step_x);
             float pz = -half_height + (z * step_z);
+            float tx = x * tex_step_x;
+            float tz = z * tex_step_z;
 
             vertices[index].position = (Vec3){px, 0.0f, pz};
             vertices[index].normal = (Vec3){0.0f, 1.0f, 0.0f};
+            vertices[index].tex_coord = (Vec2){tx, tz};
             vertices[index].color = (Vec4){1.0f, 1.0f, 1.0f, 1.0f};
             index += 1;
         }
@@ -175,40 +247,40 @@ Mesh mesh_create_cube(float size)
 
     Vertex vertices[] = {
         // Front face (Z+)
-        {{-half, -half,  half}, {0.0f, 0.0f, 1.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
-        {{ half, -half,  half}, {0.0f, 0.0f, 1.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
-        {{ half,  half,  half}, {0.0f, 0.0f, 1.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
-        {{-half,  half,  half}, {0.0f, 0.0f, 1.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/},
+        {{-half, -half,  half}, {0.0f, 0.0f, 1.0f} , {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ half, -half,  half}, {0.0f, 0.0f, 1.0f} , {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ half,  half,  half}, {0.0f, 0.0f, 1.0f} , {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{-half,  half,  half}, {0.0f, 0.0f, 1.0f} , {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
 
         // Back face (Z-)
-        {{ half, -half, -half}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
-        {{-half, -half, -half}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
-        {{-half,  half, -half}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
-        {{ half,  half, -half}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/},
+        {{ half, -half, -half}, {0.0f, 0.0f, -1.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{-half, -half, -half}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{-half,  half, -half}, {0.0f, 0.0f, -1.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ half,  half, -half}, {0.0f, 0.0f, -1.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
 
         // Right face (X+)
-        {{ half, -half,  half}, {1.0f, 0.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
-        {{ half, -half, -half}, {1.0f, 0.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
-        {{ half,  half, -half}, {1.0f, 0.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
-        {{ half,  half,  half}, {1.0f, 0.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/},
+        {{ half, -half,  half}, {1.0f, 0.0f, 0.0f} , {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ half, -half, -half}, {1.0f, 0.0f, 0.0f} , {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ half,  half, -half}, {1.0f, 0.0f, 0.0f} , {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ half,  half,  half}, {1.0f, 0.0f, 0.0f} , {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
 
         // Left face (X-)
-        {{-half, -half, -half}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
-        {{-half, -half,  half}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
-        {{-half,  half,  half}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
-        {{-half,  half, -half}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/},
+        {{-half, -half, -half}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{-half, -half,  half}, {-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{-half,  half,  half}, {-1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{-half,  half, -half}, {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
 
         // Top face (Y+)
-        {{-half,  half,  half}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
-        {{ half,  half,  half}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
-        {{ half,  half, -half}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
-        {{-half,  half, -half}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/},
+        {{-half,  half,  half}, {0.0f, 1.0f, 0.0f} , {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ half,  half,  half}, {0.0f, 1.0f, 0.0f} , {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ half,  half, -half}, {0.0f, 1.0f, 0.0f} , {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{-half,  half, -half}, {0.0f, 1.0f, 0.0f} , {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
 
         // Bottom face (Y-)
-        {{-half, -half, -half}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 0.0f}*/},
-        {{ half, -half, -half}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 0.0f}*/},
-        {{ half, -half,  half}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {1.0f, 1.0f}*/},
-        {{-half, -half,  half}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}/*, {0.0f, 1.0f}*/}
+        {{-half, -half, -half}, {0.0f, -1.0f, 0.0f}, {0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ half, -half, -half}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{ half, -half,  half}, {0.0f, -1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}},
+        {{-half, -half,  half}, {0.0f, -1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}}
     };
 
     unsigned int indices[] = {
@@ -251,7 +323,10 @@ void mesh_init_data(Mesh *m, Vertex *vertices, size_t vertices_len, unsigned int
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, normal));
 
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, color));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, tex_coord));
+
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *)offsetof(Vertex, color));
 
     glBindVertexArray(0);
 
@@ -262,7 +337,7 @@ void mesh_init_data(Mesh *m, Vertex *vertices, size_t vertices_len, unsigned int
     }
 }
 
-void render_model_3d(Renderer *r, Mesh m, Vec3 pos, Vec3 rot, Vec3 scale)
+void render_mesh_3d(Renderer *r, Mesh m, Vec3 pos, Vec3 rot, Vec3 scale, Vec4 color)
 {
     Mat4 translation = mat4_translate(pos);
 
@@ -277,10 +352,6 @@ void render_model_3d(Renderer *r, Mesh m, Vec3 pos, Vec3 rot, Vec3 scale)
     Mat4 rotation = mat4_multiply(rotation_x, rotation_y);
     rotation = mat4_multiply(rotation, rotation_z);
 
-    // Mat4 rotation = mat4_rotate(
-    //     SDL_GetTicks()/1000.0f * radians(50.0), rot
-    // );
-
     Mat4 scaled = mat4_scale(scale);
 
     Mat4 model = mat4_identity();
@@ -290,33 +361,13 @@ void render_model_3d(Renderer *r, Mesh m, Vec3 pos, Vec3 rot, Vec3 scale)
 
     shader_use(r->shader_3d);
 
-    shader_set_mat4(r->shader_3d, "model", model);
-    shader_set_mat4(r->shader_3d, "view", r->camera.view);
-    shader_set_mat4(r->shader_3d, "projection", r->camera.projection);
+    shader_set_mat4(r->shader_3d, "uModel", model);
+    shader_set_mat4(r->shader_3d, "uView", r->camera.view);
+    shader_set_mat4(r->shader_3d, "uProjection", r->camera.projection);
+
+    shader_set_vec4(r->shader_3d, "uColor", color);
 
     glBindVertexArray(m.vao);
     glDrawElements(GL_TRIANGLES, m.indices_len, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-}
-
-void renderer_camera_update(Renderer *r)
-{
-    r->camera.aspect = r->width/r->height;
-
-    // View
-    Mat4 view = mat4_identity();
-    Mat4 look = mat4_look_at(
-        r->camera.position,
-        vec3_add(r->camera.position, r->camera.target),
-        r->camera.up
-    );
-    r->camera.view = mat4_multiply(view, look);
-
-    // 3D Projection
-    Mat4 projection = mat4_identity();
-    Mat4 perspective = mat4_perspective(
-        r->camera.fov, r->camera.aspect,
-        r->camera.near, r->camera.far
-    );
-    r->camera.projection = mat4_multiply(projection, perspective);
 }
