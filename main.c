@@ -58,7 +58,6 @@ void handle_input(Renderer *r)
         {
             if (paused) return;
 
-            // TODO: Weird flickness while moving the camera and walking at the same time
             if (first_mouse)
             {
                 last_x = event.motion.x;
@@ -92,7 +91,7 @@ void handle_input(Renderer *r)
         }
     }
 
-    // Camera moviment
+    // Camera movement
     const bool *state = SDL_GetKeyboardState(NULL);
 
     Vec3 forward = r->camera.target;
@@ -150,7 +149,7 @@ int main(void)
 
         // WALL
         {
-            Vec3 pos = {0.0, 0.0, -2.0};
+            Vec3 pos = {0.0, 2.0, -2.0};
             Vec3 rot = {90.0, 0.0, 0.0};
             Vec3 scale = {1.0, 1.0, 1.0};
             Vec4 color = {1.0, 1.0, 1.0, 1.0};
@@ -222,6 +221,12 @@ int main(void)
             Vec4 color = {1.0, 0.5, 0.31, 1.0};
             render_mesh_3d(&renderer, cube, pos, rot, scale, color);
         }
+
+        render_begin_2d(&renderer);
+
+        render_rect_2d(&renderer, 10, 10, 400, 20, vec4(1,1,0,0.35));
+
+        render_end_2d(&renderer);
 
         renderer_present(&renderer);
     }

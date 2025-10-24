@@ -10,6 +10,31 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "external/stb_image.h"
 
+// TODO: Bring it to the renderer
+static Vertex vertices_data[1024];
+static size_t vertices_data_len = 0;
+static unsigned int indices_data[1024];
+static size_t indices_data_len = 0;
+static GLuint vao_2d, vbo_2d, ebo_2d;
+
+static void setup_2d_buffers(void)
+{
+    glGenVertexArrays(1, &vao_2d);
+    glGenBuffers(1, &vbo_2d);
+    glGenBuffers(1, &ebo_2d);
+    glBindVertexArray(vao_2d);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_2d);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_data), vertices_data, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_2d);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices_data), indices_data, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tex_coord));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
+}
+
 bool renderer_init(Renderer *r, const char *title, int width, int height)
 {
     if (!SDL_Init(SDL_INIT_VIDEO))
@@ -51,8 +76,13 @@ bool renderer_init(Renderer *r, const char *title, int width, int height)
     }
 
     Shader shader_3d;
-    if (!shader_create_program(&shader_3d, "shader.vert", "shader.frag")) return false;
+    Shader shader_2d;
+
+    if (!shader_create_program(&shader_3d, "3d", "shader.frag")) return false;
+    if (!shader_create_program(&shader_2d, "shader.vert", "shader.frag")) return false;
+
     r->shader_3d = shader_3d;
+    r->shader_2d = shader_2d;
 
     Camera camera = {0};
     camera.fov = radians(65.0);
@@ -69,6 +99,8 @@ bool renderer_init(Renderer *r, const char *title, int width, int height)
     r->width = width;
     r->height = height;
     r->wireframes = false;
+
+    setup_2d_buffers();
 
     glViewport(0, 0, width, height);
     glEnable(GL_DEPTH_TEST);
@@ -96,6 +128,80 @@ void renderer_present(Renderer *r)
     if (!r || !r->window) return;
 
     SDL_GL_SwapWindow(r->window);
+}
+
+void render_begin_2d(Renderer *r)
+{
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    shader_use(r->shader_2d);
+}
+
+void render_end_2d(Renderer *r)
+{
+    Mat4 projection = mat4_ortho(0, (float)r->width, (float)r->height, 0, -1.0, 1.0);
+    shader_set_mat4(r->shader_2d, "uProjection", projection);
+
+    glBindVertexArray(vao_2d);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_2d);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * vertices_data_len, vertices_data);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_2d);
+    glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(GLuint) * indices_data_len, indices_data);
+
+    glDrawElements(GL_TRIANGLES, indices_data_len, GL_UNSIGNED_INT, 0);
+
+    vertices_data_len = 0;
+    indices_data_len = 0;
+
+    glBindVertexArray(0);
+
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    shader_use(r->shader_3d);
+}
+
+void render_rect_2d(Renderer *r, int x, int y, int w, int h, Vec4 color)
+{
+    (void)r;
+    w = x + w;
+    h = y + h;
+    // BOTTOM LEFT
+    vertices_data[vertices_data_len].position  = vec3(x, h, 0);
+    vertices_data[vertices_data_len].tex_coord = vec2(0, 0);
+    vertices_data[vertices_data_len].color     = color;
+    vertices_data_len += 1;
+
+    // TOP LEFT
+    vertices_data[vertices_data_len].position  = vec3(x, y, 0);
+    vertices_data[vertices_data_len].tex_coord = vec2(0, 1);
+    vertices_data[vertices_data_len].color     = color;
+    vertices_data_len += 1;
+
+    // BOTTOM RIGHT
+    vertices_data[vertices_data_len].position  = vec3(w, h, 0);
+    vertices_data[vertices_data_len].tex_coord = vec2(1, 0);
+    vertices_data[vertices_data_len].color     = color;
+    vertices_data_len += 1;
+
+    // TOP RIGHT
+    vertices_data[vertices_data_len].position  = vec3(w, y, 0);
+    vertices_data[vertices_data_len].tex_coord = vec2(1, 1);
+    vertices_data[vertices_data_len].color     = color;
+    vertices_data_len += 1;
+
+    unsigned int i = indices_data_len > 0 ? indices_data[indices_data_len-1]+1 : 0;
+
+    indices_data[indices_data_len]     = i;
+    indices_data[indices_data_len + 1] = i + 1;
+    indices_data[indices_data_len + 2] = i + 2;
+    indices_data[indices_data_len + 3] = i + 1;
+    indices_data[indices_data_len + 4] = i + 2;
+    indices_data[indices_data_len + 5] = i + 3;
+
+    indices_data_len += 6;
 }
 
 void renderer_camera_update(Renderer *r)
@@ -126,6 +232,7 @@ Texture texture_load_from_file(const char *filepath)
 
     int n;
 
+    stbi_set_flip_vertically_on_load(1);
     unsigned char *data = stbi_load(filepath, &t.width, &t.height, &n, 0);
 
     if (data == 0)

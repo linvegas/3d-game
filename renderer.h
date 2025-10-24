@@ -25,6 +25,7 @@ typedef struct {
     Camera camera;
     int width;
     int height;
+    Shader shader_2d;
     Shader shader_3d;
     bool wireframes;
 } Renderer;
@@ -32,6 +33,10 @@ typedef struct {
 bool renderer_init(Renderer *r, const char *title, int width, int height);
 void renderer_clear(Renderer *ren, float r, float g, float b, float a);
 void renderer_present(Renderer *r);
+
+void render_begin_2d(Renderer *r);
+void render_end_2d(Renderer *r);
+void render_rect_2d(Renderer *r, int x, int y, int w, int h, Vec4 color);
 
 void renderer_camera_update(Renderer *r);
 

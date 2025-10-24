@@ -1,5 +1,6 @@
 #include "shader.h"
 
+#include <string.h>
 #include <stdio.h>
 
 const char *vertex_shader_src =
@@ -46,9 +47,36 @@ const char *frag_shader_src =
     "    vec3 lightDir = normalize(uLightPos - fPos);\n"
     "    float diff = max(dot(norm, lightDir), 0.0);\n"
     "    vec3 diffuse = diff * lightColor;\n"
-    "    vec4 texColor = uUseTexture ? texture(uTexture, fTexCoord) : vec4(1.0);\n"
+    "    vec4 texColor = uUseTexture ? texture(uTexture, -fTexCoord) : vec4(1.0);\n"
     "    vec3 light = ambient + diffuse;\n"
     "    FragColor = vec4(light, 1.0) * texColor * uColor;\n"
+    "}\n";
+
+const char *vertex_shader_src_2d =
+    "#version 330 core\n"
+    "layout (location = 0) in vec3 vPos;\n"
+    "layout (location = 1) in vec2 vTexCoord;\n"
+    "layout (location = 2) in vec4 vColor;\n"
+    "uniform mat4 uProjection;\n"
+    "out vec2 fTexCoord;\n"
+    "out vec4 fColor;\n"
+    "void main() {\n"
+    "    fTexCoord = vTexCoord;\n"
+    "    fColor = vColor;\n"
+    "    gl_Position = uProjection * vec4(vPos.xy, 0.0, 1.0);\n"
+    "}\n";
+
+const char *frag_shader_src_2d =
+    "#version 330 core\n"
+    "in vec2 fTexCoord;\n"
+    "in vec4 fColor;\n"
+    "uniform sampler2D uTexture;\n"
+    "uniform vec4 uColor;\n"
+    "uniform bool uUseTexture;\n"
+    "out vec4 FragColor;\n"
+    "void main() {\n"
+    "    vec4 texColor = uUseTexture ? texture(uTexture, fTexCoord) : vec4(1.0);\n"
+    "    FragColor = texColor * fColor;\n"
     "}\n";
 
 bool shader_compile(const char *source, GLuint *shader, GLenum shader_type)
@@ -94,18 +122,24 @@ bool shader_link(GLuint *program)
     return true;
 }
 
+// TODO: We never use the shader_path
 bool shader_create_program(Shader *s, const char *vertex_path, const char *fragment_path)
 {
-    (void)vertex_path;
+    // (void)vertex_path;
     (void)fragment_path;
+
+    bool is_3d = true;
+
+    if (strcmp(vertex_path, "3d") == 0) is_3d = true;
+    else is_3d = false;
 
     *s = glCreateProgram();
 
     GLuint vertex_shader;
     GLuint fragment_shader;
 
-    if (!shader_compile(vertex_shader_src, &vertex_shader, GL_VERTEX_SHADER)) return false;
-    if (!shader_compile(frag_shader_src, &fragment_shader, GL_FRAGMENT_SHADER)) return false;
+    if (!shader_compile(is_3d ? vertex_shader_src : vertex_shader_src_2d, &vertex_shader, GL_VERTEX_SHADER)) return false;
+    if (!shader_compile(is_3d ? frag_shader_src : frag_shader_src_2d, &fragment_shader, GL_FRAGMENT_SHADER)) return false;
 
     glAttachShader(*s, vertex_shader);
     glAttachShader(*s, fragment_shader);

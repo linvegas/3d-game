@@ -10,7 +10,9 @@ typedef struct Vec2 { float x; float y; } Vec2;
 typedef struct Vec3 { float x; float y; float z; } Vec3;
 typedef struct Vec4 { float x; float y; float z; float w; } Vec4;
 
+#define vec2(x, y) (Vec2){(x), (y)}
 #define vec3(x, y, z) (Vec3){(x), (y), (z)}
+#define vec4(x, y, z, w) (Vec4){(x), (y), (z), (w)}
 
 Vec3 vec3_add(Vec3 v1, Vec3 v2);
 Vec3 vec3_sub(Vec3 v1, Vec3 v2);
@@ -36,6 +38,7 @@ Mat4 mat4_identity(void);
 Mat4 mat4_multiply(Mat4 left, Mat4 right);
 Mat4 mat4_look_at(Vec3 pos, Vec3 target, Vec3 up);
 Mat4 mat4_perspective(double fov, double aspect, double near_plane, double far_plane);
+Mat4 mat4_ortho(double left, double right, double bottom, double top, double near, double far);
 
 #endif // LINALG_H
 // vim:ft=c
