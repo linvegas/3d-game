@@ -24,7 +24,7 @@ float last_y = SCREEN_HEIGHT / 2.0;
 int first_mouse = 1;
 
 float vel = 6.0f;
-float delta = 0.0f;
+double delta = 0.0f;
 bool paused = false;
 
 void handle_input(Renderer *r)
@@ -127,12 +127,14 @@ int main(void)
 
     Texture city = texture_load_from_file("assets/pc98-city.png");
 
-    float last_time = SDL_GetTicks();
+    Uint64 last_time =  SDL_GetPerformanceCounter();
+
+    float light_x = 0;
 
     while (running)
     {
-        Uint64 current_time = SDL_GetTicks();
-        delta = (current_time - last_time) / 1000.0f;
+        Uint64 current_time = SDL_GetPerformanceCounter();
+        delta = ((current_time - last_time) * 1000 / (double)SDL_GetPerformanceFrequency()) * 0.001;
         last_time = current_time;
 
         handle_input(&renderer);
@@ -185,9 +187,11 @@ int main(void)
             render_mesh_3d(&renderer, floor, pos, rot, scale, color);
         }
 
+        light_x += delta * 0.5;
+
         // LIGHT
         {
-            Vec3 light_pos = {-3.0f, 5.0f, 4.0};
+            Vec3 light_pos = {sinf(light_x)*10.0, 5.0f, 3.0};
             Vec3 rot = {0.0f, 0.0f, 0.0f};
             Vec3 scale = {0.35f, 0.35f, 0.35f};
             Vec4 color = {1.0, 1.0, 1.0, 1.0};
