@@ -30,6 +30,16 @@ typedef struct {
     bool wireframes;
 } Renderer;
 
+typedef struct {
+    float x, y;          // Position in atlas (0-1 normalized)
+    float width, height; // Size in atlas (0-1 normalized)
+    int pixel_width;     // Actual pixel width
+    int pixel_height;    // Actual pixel height
+    int bearing_x;       // Offset from baseline to left of glyph
+    int bearing_y;       // Offset from baseline to top of glyph
+    int advance;         // Horizontal advance to next glyph
+} Glyph;
+
 bool renderer_init(Renderer *r, const char *title, int width, int height);
 void renderer_clear(Renderer *ren, float r, float g, float b, float a);
 void renderer_present(Renderer *r);
@@ -37,6 +47,7 @@ void renderer_present(Renderer *r);
 void render_begin_2d(Renderer *r);
 void render_end_2d(Renderer *r);
 void render_rect_2d(Renderer *r, int x, int y, int w, int h, Vec4 color);
+void render_text_2d(const char *text, int x, int y, Vec4 color);
 
 void renderer_camera_update(Renderer *r);
 
@@ -47,6 +58,7 @@ typedef struct {
 } Texture;
 
 Texture texture_load_from_file(const char *filepath);
+Texture texture_load_from_font(const char *fontpath, int size);
 void    texture_bind(Texture t, int slot);
 void    texture_unbind(void);
 

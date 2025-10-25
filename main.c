@@ -121,13 +121,20 @@ int main(void)
         return 1;
     }
 
+    // SDL_GL_SetSwapInterval(0);
+
     Mesh cube = mesh_create_cube(1.0);
     Mesh floor = mesh_create_plane(100, 100, 0);
     Mesh wall = mesh_create_plane(8, 8, 0);
 
     Texture city = texture_load_from_file("assets/pc98-city.png");
 
+    Texture font = texture_load_from_font("assets/DepartureMono/DepartureMono-Regular.otf", 44);
+
     Uint64 last_time =  SDL_GetPerformanceCounter();
+    float fps = 0;
+    float fps_smoothed = 60.0f;
+    float fps_smoothing = 0.8f;
 
     float light_x = 0;
 
@@ -135,6 +142,13 @@ int main(void)
     {
         Uint64 current_time = SDL_GetPerformanceCounter();
         delta = ((current_time - last_time) * 1000 / (double)SDL_GetPerformanceFrequency()) * 0.001;
+
+        if (delta > 0)
+        {
+            fps = 1.0f/delta;
+            fps_smoothed = fps_smoothing * fps_smoothed + (1.0f - fps_smoothing) * fps;
+        }
+
         last_time = current_time;
 
         handle_input(&renderer);
@@ -228,7 +242,19 @@ int main(void)
 
         render_begin_2d(&renderer);
 
-        render_rect_2d(&renderer, 10, 10, 400, 20, vec4(1,1,0,0.35));
+        texture_bind(font, 0);
+        shader_set_int(renderer.shader_2d, "uTexture", 0);
+        shader_set_int(renderer.shader_2d, "uUseTexture", 1);
+
+        // render_rect_2d(&renderer, 10, 10, 800, 600, vec4(1,1,1,1));
+
+        // FPS COUNTER
+        {
+            char fps_text[1024];
+            snprintf(fps_text, 1024, "FPS: %.2f", fps_smoothed);
+            render_text_2d(fps_text, 2, 2, vec4(0,0,0,1));
+            render_text_2d(fps_text, 0, 0, vec4(1,1,1,1));
+        }
 
         render_end_2d(&renderer);
 

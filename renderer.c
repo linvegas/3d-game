@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <stddef.h>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_timer.h>
 
@@ -16,6 +19,7 @@ static size_t vertices_data_len = 0;
 static unsigned int indices_data[1024];
 static size_t indices_data_len = 0;
 static GLuint vao_2d, vbo_2d, ebo_2d;
+static Glyph glyphs[128];
 
 static void setup_2d_buffers(void)
 {
@@ -204,6 +208,62 @@ void render_rect_2d(Renderer *r, int x, int y, int w, int h, Vec4 color)
     indices_data_len += 6;
 }
 
+void render_text_2d(const char *text, int x, int y, Vec4 color)
+{
+    float scale = 1.0;
+
+    // TODO: Use font defined size
+    float baseline_y = y + (44 * scale);
+
+    for (const char *c = text; *c; c++)
+    {
+        Glyph glyph = glyphs[(int)*c];
+
+        float x_pos = x + glyph.bearing_x * scale;
+        float y_pos = baseline_y - glyph.bearing_y * scale;
+
+        float w = glyph.pixel_width * scale;
+        float h = glyph.pixel_height * scale;
+
+        // BOTTOM LEFT
+        vertices_data[vertices_data_len].position  = vec3(x_pos, y_pos + h, 0);
+        vertices_data[vertices_data_len].tex_coord = vec2(glyph.x, glyph.y);
+        vertices_data[vertices_data_len].color     = color;
+        vertices_data_len += 1;
+
+        // TOP LEFT
+        vertices_data[vertices_data_len].position  = vec3(x_pos, y_pos, 0);
+        vertices_data[vertices_data_len].tex_coord = vec2(glyph.x, glyph.y + glyph.height);
+        vertices_data[vertices_data_len].color     = color;
+        vertices_data_len += 1;
+
+        // BOTTOM RIGHT
+        vertices_data[vertices_data_len].position  = vec3(x_pos + w, y_pos + h, 0);
+        vertices_data[vertices_data_len].tex_coord = vec2(glyph.x + glyph.width, glyph.y);
+        vertices_data[vertices_data_len].color     = color;
+        vertices_data_len += 1;
+
+        // TOP RIGHT
+        vertices_data[vertices_data_len].position  = vec3(x_pos + w, y_pos, 0);
+        vertices_data[vertices_data_len].tex_coord = vec2(glyph.x + glyph.width, glyph.y + glyph.height);
+        vertices_data[vertices_data_len].color     = color;
+        vertices_data_len += 1;
+
+        unsigned int i = indices_data_len > 0 ? indices_data[indices_data_len-1]+1 : 0;
+
+        indices_data[indices_data_len]     = i;
+        indices_data[indices_data_len + 1] = i + 1;
+        indices_data[indices_data_len + 2] = i + 2;
+        indices_data[indices_data_len + 3] = i + 1;
+        indices_data[indices_data_len + 4] = i + 2;
+        indices_data[indices_data_len + 5] = i + 3;
+
+        indices_data_len += 6;
+
+        x += glyph.advance * scale;
+    }
+}
+
 void renderer_camera_update(Renderer *r)
 {
     r->camera.aspect = r->width/r->height;
@@ -253,6 +313,114 @@ Texture texture_load_from_file(const char *filepath)
 
     glBindTexture(GL_TEXTURE_2D, 0);
     stbi_image_free(data);
+
+    return t;
+}
+
+Texture texture_load_from_font(const char *fontpath, int size)
+{
+    Texture t = {0};
+
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft)) {
+        fprintf(stderr,"ERROR: Could not init FreeType Library\n");
+    }
+
+    FT_Face face;
+    if (FT_New_Face(ft, fontpath, 0, &face)) {
+        fprintf(stderr,"ERROR: Failed to load font from file\n");
+    }
+
+    FT_Set_Pixel_Sizes(face, 0, size);
+
+    unsigned int glyph_max_w = 0;
+    unsigned int glyph_max_h = 0;
+
+    for (unsigned char c = 0; c < 128; c++)
+    {
+        if (FT_Load_Char(face, c, FT_LOAD_RENDER)) continue;
+
+        if (face->glyph->bitmap.width > glyph_max_w)
+            glyph_max_w = face->glyph->bitmap.width;
+
+        if (face->glyph->bitmap.rows > glyph_max_h)
+            glyph_max_h = face->glyph->bitmap.rows;
+    }
+
+    int glyphs_row = 16;
+    int glyphs_col = 8;
+
+    t.width = glyphs_row * glyph_max_w;
+    t.height = glyphs_col * glyph_max_h;
+
+    unsigned char buffer[t.width*t.height];
+    memset(buffer, 0, t.width*t.height);
+
+    // int current_x = 0;
+    // int current_y = 0;
+
+    for (unsigned char c = 0; c < 128; c++)
+    {
+        if (FT_Load_Char(face, c, FT_LOAD_RENDER))
+        {
+            fprintf(stderr, "[ERROR] Failed to load character: %c\n", c);
+            continue;
+        }
+
+        FT_GlyphSlot glyph = face->glyph;
+        FT_Bitmap* bitmap = &glyph->bitmap;
+
+        int glyph_x = (c % glyphs_row) * glyph_max_w;
+        int glyph_y = (c / glyphs_row) * glyph_max_h;
+
+        for (unsigned int row = 0; row < bitmap->rows; row++) {
+            for (unsigned int col = 0; col < bitmap->width; col++)
+            {
+                int x = glyph_x + col;
+                int y = glyph_y + row;
+                // int y = (t.height - glyph_y - bitmap->rows) + row;
+                int index = y * t.width + x;
+                int bitmap_index = (bitmap->rows - 1 - row) * bitmap->width + col;
+
+                buffer[index] = bitmap->buffer[bitmap_index];
+            }
+        }
+
+        glyphs[c].x = (float)glyph_x / (float)t.width;
+        glyphs[c].y = (float)glyph_y / (float)t.height;
+        glyphs[c].width = (float)bitmap->width / (float)t.width;
+        glyphs[c].height = (float)bitmap->rows / (float)t.height;
+        glyphs[c].pixel_width = bitmap->width;
+        glyphs[c].pixel_height = bitmap->rows;
+        glyphs[c].bearing_x = glyph->bitmap_left;
+        glyphs[c].bearing_y = glyph->bitmap_top;
+        glyphs[c].advance = glyph->advance.x >> 6;
+    }
+
+    glGenTextures(1, &t.id);
+    glBindTexture(GL_TEXTURE_2D, t.id);
+
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RED,
+        t.width,
+        t.height,
+        0,
+        GL_RED,
+        GL_UNSIGNED_BYTE,
+        buffer
+    );
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    FT_Done_Face(face);
+    FT_Done_FreeType(ft);
 
     return t;
 }

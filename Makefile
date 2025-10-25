@@ -1,8 +1,10 @@
 CFLAGS = -Wall -Wextra -ggdb
 
-ifeq ($(GRAPHICS),OPENGL_21)
-    CFLAGS += -DGRAPHICS_API_OPENGL_21
-endif
+FT_CFLAGS = $(shell pkg-config --cflags freetype2)
+FT_LIBS   = $(shell pkg-config --libs freetype2)
+
+LIBS = $(FT_LIBS) -lSDL3 -lm
+CFLAGS += $(FT_CFLAGS)
 
 main: main.c shader.c renderer.c linalg.c
-	cc $(CFLAGS) -o main main.c renderer.c linalg.c shader.c -lSDL3 -lm
+	cc $(CFLAGS) -o main main.c renderer.c linalg.c shader.c $(LIBS)

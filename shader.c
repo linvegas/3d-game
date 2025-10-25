@@ -75,7 +75,7 @@ const char *frag_shader_src_2d =
     "uniform bool uUseTexture;\n"
     "out vec4 FragColor;\n"
     "void main() {\n"
-    "    vec4 texColor = uUseTexture ? texture(uTexture, fTexCoord) : vec4(1.0);\n"
+    "    vec4 texColor = uUseTexture ? vec4(1.0, 1.0, 1.0, texture(uTexture, fTexCoord).r) : vec4(1.0);\n"
     "    FragColor = texColor * fColor;\n"
     "}\n";
 
